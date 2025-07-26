@@ -7,7 +7,7 @@ const policySchema=new mongoose.Schema({
     policyCategoryId:{ type: mongoose.Schema.Types.ObjectId, ref: 'LOB' },
     companyId:{ type: mongoose.Schema.Types.ObjectId, ref: 'Carrier'},
     userId:{ type: mongoose.Schema.Types.ObjectId, ref: 'User'},
-})
+},{timestamps:true})
 
 const Policy=mongoose.model('Policy',policySchema);
 module.exports=Policy;

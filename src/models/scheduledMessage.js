@@ -4,7 +4,7 @@ const ScheduledMessageSchema=new mongoose.Schema({
   message: {type:String},
   scheduledTime: {type:Date},
   inserted: { type: Boolean, default: false }
-});
+},{timestamps:true});
 
 const ScheduledMessage= mongoose.model('ScheduledMessage', ScheduledMessageSchema);
 

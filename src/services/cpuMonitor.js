@@ -13,49 +13,37 @@ module.exports = function monitorCPU() {
   }, 10000);
 };*/
 
-const os = require('os');
-const { exec } = require('child_process');
 const util = require('util');
+const { exec } = require('child_process');
+const { getCpuUsage } = require('../utils/systemUtils');
+
 const execPromise = util.promisify(exec);
-
-function getCpuUsage() {
-  const cpus = os.cpus();
-  let totalIdle = 0, totalTick = 0;
-
-  cpus.forEach(cpu => {
-    for (type in cpu.times) {
-      totalTick += cpu.times[type];
-    }
-    totalIdle += cpu.times.idle;
-  });
-
-  return { idle: totalIdle / cpus.length, total: totalTick / cpus.length };
-}
 
 async function checkCpuAndRestart() {
   try {
     const startUsage = getCpuUsage();
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+    await new Promise(resolve => setTimeout(resolve, 1000));
     const endUsage = getCpuUsage();
 
-    const idleDifference = endUsage.idle - startUsage.idle;
-    const totalDifference = endUsage.total - startUsage.total;
-    const cpuUsagePercent = 100 - ((100 * idleDifference) / totalDifference);
+    const idleDiff = endUsage.idle - startUsage.idle;
+    const totalDiff = endUsage.total - startUsage.total;
+    const cpuUsage = 100 - ((100 * idleDiff) / totalDiff);
 
-    console.log(`CPU Usage: ${cpuUsagePercent.toFixed(2)}%`);
+    console.log(`CPU Usage: ${cpuUsage.toFixed(2)}%`);
 
-    if (cpuUsagePercent > 70) {
-      console.log('CPU usage exceeds 70%. Restarting server...');
+    if (cpuUsage > 70) {
+      console.log('CPU exceeds 70%, restarting...');
       await execPromise('pm2 restart all');
-      console.log('Server restarted successfully.');
+      console.log('Server restarted.');
     }
   } catch (error) {
-    console.error('Error in CPU monitoring or server restart:', error);
+    console.error('Error in CPU monitor:', error);
   }
 }
 
-// Run every 10 seconds
-setInterval(checkCpuAndRestart, 10000);
+function startCPUMonitor(interval = 10000) {
+  checkCpuAndRestart(); // initial check
+  setInterval(checkCpuAndRestart, interval);
+}
 
-// Initial check
-checkCpuAndRestart();
+module.exports = startCPUMonitor;

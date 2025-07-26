@@ -3,7 +3,12 @@ const express=require('express');
 const morgan=require('morgan');
 const cors=require('cors');
 const routesV1 = require('./routes/apiRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
+const policyRoutes = require('./routes/policyRoutes');
+const startCPUMonitor = require('./services/cpuMonitor');
+const cpuRoutes = require('./routes/cpuRoutes');
 const mongoconnect=require('./config/mongoose');
+
 
 const app = express();
 //Middleware
