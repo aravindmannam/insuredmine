@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { getCpuUsage } = require('../utils/systemUtils');
 
-router.get('/cpu', async (req, res) => {
+router.get('/cpu-usage', async (req, res) => {
   const start = getCpuUsage();
   await new Promise(resolve => setTimeout(resolve, 1000));
   const end = getCpuUsage();

@@ -1,4 +1,6 @@
 const User = require('../models/user');
+const Policy= require('../models/policy');
+
 
 exports.searchPolicyByUsername = async (req, res) => {
   try {

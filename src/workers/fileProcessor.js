@@ -9,8 +9,8 @@ require('../models/agent');
 require('../models/user');
 require('../models/userAccount');
 require('../models/lob');
-require('../models/Carrier');
-require('../models/Policy');
+require('../models/carrier');
+require('../models/policy');
 
 const Agent = mongoose.model('Agent');
 const User = mongoose.model('User');
@@ -57,60 +57,75 @@ async function processFile(filePath) {
     let inserted = 0;
 
     for (const row of data) {
-      const agent = await Agent.create({
-         agentName: row.agent
-      }
-      );
+  const agent = await Agent.findOneAndUpdate(
+    { agentName: row.agent },
+    { agentName: row.agent },
+    { upsert: true, new: true }
+  );
 
-      const userAccount = await UserAccount.create({
-        accountName: row.account_name
-      }
-      );
+  const userAccount = await UserAccount.findOneAndUpdate(
+    { accountName: row.account_name },
+    { accountName: row.account_name },
+    { upsert: true, new: true }
+  );
 
-      const lob = await LOB.create(
-        { category_name: row.category_name }
-      );
+  const lob = await LOB.findOneAndUpdate(
+    { categoryName: row.category_name },
+    { categoryName: row.category_name },
+    { upsert: true, new: true }
+  );
 
-      const carrier = await Carrier.create(
-        { company_name: row.company_name }      
-      );
+  const carrier = await Carrier.findOneAndUpdate(
+    { companyName: row.company_name },
+    { companyName: row.company_name },
+    { upsert: true, new: true }
+  );
 
-      const user = await User.create(
-        { email: row.email ,
-          firstName: row.firstname,
-          dob: row.dob,
-          address: row.address,
-          phone: row.phone,
-          state: row.state,
-          zip: row.zip,
-          gender: row.gender,
-          userType: row.userType,
-        }
-      );
+  // Email is a good unique field for user
+  let user = await User.findOne({ email: row.email });
 
-      await Policy.create({
-        policyNumber: row.policy_number,
-        startDate: row.policy_start_date,
-        endDate: row.policy_end_date,
-        policy_type: row.policy_type,
-        policy_mode: row.policy_mode,
-        premium_amount: row.premium_amount,
-        premium_amount_written: row.premium_amount_written,
-        csr: row.csr,
-        producer: row.producer,
-        account_type: row.account_type,
-        phone: row.phone,
-        primary: row.primary,
-        userId: user._id,                 
-        policyCategoryId: lob._id,      
-        companyId: carrier._id,
-        userAccount: userAccount._id,
-        
-        agent: agent._id,
-      });
+  if (!user) {
+    user = await User.create({
+      email: row.email,
+      firstName: row.firstname,
+      dob: row.dob,
+      address: row.address,
+      phone: row.phone,
+      state: row.state,
+      zip: row.zip,
+      gender: row.gender,
+      userType: row.userType,
+    });
+  }
 
-      inserted++;
-    }
+  // For Policy - you can check using policy number
+  const existingPolicy = await Policy.findOne({ policyNumber: row.policy_number });
+
+  if (!existingPolicy) {
+    await Policy.create({
+      policyNumber: row.policy_number,
+      startDate: row.policy_start_date,
+      endDate: row.policy_end_date,
+      policy_type: row.policy_type,
+      policy_mode: row.policy_mode,
+      premium_amount: row.premium_amount,
+      premium_amount_written: row.premium_amount_written,
+      csr: row.csr,
+      producer: row.producer,
+      account_type: row.account_type,
+      phone: row.phone,
+      primary: row.primary,
+      userId: user._id,
+      policyCategoryId: lob._id,
+      companyId: carrier._id,
+      userAccount: userAccount._id,
+      agent: agent._id,
+    });
+
+    inserted++;
+  }
+}
+
 
     parentPort.postMessage({ success: true, inserted });
   } catch (err) {
