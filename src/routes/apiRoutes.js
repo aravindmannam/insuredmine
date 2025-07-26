@@ -3,10 +3,9 @@ const multer = require('multer');
 const path = require('path');
 const { Worker } = require('worker_threads');
 const User = require('../models/user');
-const Policy = require('../models/policy');
-
+const ScheduledMessage = require('../models/scheduledMessage');
 const router = express.Router();
-
+const cron = require('node-cron');
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
@@ -95,4 +94,67 @@ router.get('/policies/aggregate', async (req, res) => {
   }
 });
 
+router.post('/', async (req, res) => {
+  const { message, day, time } = req.body;
+  const scheduleAt = new Date(`${day}T${time}:00`);
+  await ScheduledMessage.create({ message, scheduleAt });
+  res.send('Message scheduled');
+});
+
+router.post('/schedule-message', async (req, res) => {
+  try {
+    const { message, day, time } = req.body;
+
+    if (!message || !day || !time) {
+      return res.status(400).json({ error: 'Message, day, and time are required' });
+    }
+
+    // Parse day (e.g., "Monday") and time (e.g., "14:30")
+    const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayIndex = daysOfWeek.indexOf(day);
+    if (dayIndex === -1) {
+      return res.status(400).json({ error: 'Invalid day' });
+    }
+
+    const [hours, minutes] = time.split(':').map(Number);
+    if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+      return res.status(400).json({ error: 'Invalid time format (use HH:MM)' });
+    }
+
+    // Calculate next occurrence of the specified day and time
+    const now = new Date();
+    const scheduledDate = new Date();
+    scheduledDate.setDate(now.getDate() + ((dayIndex + 7 - now.getDay()) % 7));
+    scheduledDate.setHours(hours, minutes, 0, 0);
+
+    if (scheduledDate <= now) {
+      scheduledDate.setDate(scheduledDate.getDate() + 7); // Schedule for next week if time has passed
+    }
+
+    const newMessage = new ScheduledMessage({
+      message,
+      scheduledTime: scheduledDate
+    });
+    await newMessage.save();
+
+    // Schedule the insertion task
+    const cronTime = `${minutes} ${hours} * * ${dayIndex}`;
+    cron.schedule(cronTime, async () => {
+      try {
+        await Message.updateOne(
+          { _id: newMessage._id, inserted: false },
+          { $set: { inserted: true } }
+        );
+        console.log(`Message "${message}" inserted into DB at ${scheduledDate}`);
+      } catch (error) {
+        console.error('Error inserting message:', error);
+      }
+    });
+
+    res.status(200).json({ message: 'Message scheduled successfully', scheduledTime: scheduledDate });
+  } catch (error) {
+    console.error('Error scheduling message:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 module.exports = router;
