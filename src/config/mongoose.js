@@ -1,4 +1,7 @@
 const mongoose = require('mongoose');
+
+
+//Async function to connect to MongoDB
 const mongoconnect = async(uri)=>{
     try {
         await mongoose.connect(uri);
@@ -9,5 +12,6 @@ const mongoconnect = async(uri)=>{
     }
 };
 
+//Exports the function
 module.exports = mongoconnect;
    

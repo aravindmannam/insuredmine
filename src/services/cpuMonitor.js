@@ -1,24 +1,13 @@
-/**const os = require('os-utils');
-const { exec } = require('child_process');
-
-module.exports = function monitorCPU() {
-  setInterval(() => {
-    os.cpuUsage(function(v) {
-      console.log('CPU Usage (%): ' + v * 100);
-      if (v > 0.7) {
-        console.log('High CPU detected, restarting...');
-        exec('pm2 restart all');
-      }
-    });
-  }, 10000);
-};*/
-
 const util = require('util');
+//to run shell commands
 const { exec } = require('child_process');
+
+//custom function to check stats
 const { getCpuUsage } = require('../utils/systemUtils');
 
 const execPromise = util.promisify(exec);
 
+// Function to check CPU usage and restart server if usage > 70%
 async function checkCpuAndRestart() {
   try {
     const startUsage = getCpuUsage();
@@ -40,7 +29,7 @@ async function checkCpuAndRestart() {
     console.error('Error in CPU monitor:', error);
   }
 }
-
+// Start monitoring CPU at a fixed interval (default every 10 seconds)
 function startCPUMonitor(interval = 10000) {
   checkCpuAndRestart(); // initial check
   setInterval(checkCpuAndRestart, interval);

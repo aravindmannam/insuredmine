@@ -1,7 +1,7 @@
 const User = require('../models/user');
 const Policy= require('../models/policy');
 
-
+// Search all policies linked to a user by their first name
 exports.searchPolicyByUsername = async (req, res) => {
   try {
     const { name } = req.params;
@@ -20,6 +20,7 @@ exports.searchPolicyByUsername = async (req, res) => {
   }
 };
 
+// Aggregate total number of policies per user and list all policies per user
 exports.aggregatePoliciesPerUser = async (req, res) => {
   try {
     const aggregation = await Policy.aggregate([
@@ -40,7 +41,7 @@ exports.aggregatePoliciesPerUser = async (req, res) => {
       },
       {
         $lookup: {
-          from: 'users', // Collection name (must be lowercase plural)
+          from: 'users',
           localField: '_id',
           foreignField: '_id',
           as: 'user'

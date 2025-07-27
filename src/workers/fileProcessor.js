@@ -5,6 +5,7 @@ const csv = require('csv-parser');
 const mongoose = require('mongoose');
 const path = require('path');
 
+// Register all Mongoose models
 require('../models/agent');
 require('../models/user');
 require('../models/userAccount');
@@ -12,15 +13,16 @@ require('../models/lob');
 require('../models/carrier');
 require('../models/policy');
 
+// Initialize Mongoose models
 const Agent = mongoose.model('Agent');
 const User = mongoose.model('User');
 const UserAccount = mongoose.model('UserAccount');
 const LOB = mongoose.model('LOB');
 const Carrier = mongoose.model('Carrier');
 const Policy = mongoose.model('Policy');
-// Replace with your actual MongoDB connection URI
-const mongoURI = process.env.URI;
 
+const mongoURI = process.env.URI;
+// Connect to MongoDB inside the worker thread
 mongoose.connect(mongoURI).then(() => {
   console.log('Worker thread MongoDB connected');
   processFile(workerData)
@@ -33,17 +35,20 @@ mongoose.connect(mongoURI).then(() => {
   parentPort.postMessage({ error: 'MongoDB connection failed: ' + error.message });
 });
 
+// Function to process the uploaded file
 async function processFile(filePath) {
   const ext = path.extname(filePath);
   const data = [];
 
   try {
+     // Parse XLSX file
     if (ext === '.xlsx') {
       const workbook = xlsx.readFile(filePath);
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       const jsonData = xlsx.utils.sheet_to_json(sheet);
       data.push(...jsonData);
+     // Parse csv file
     } else if (ext === '.csv') {
       await new Promise((resolve, reject) => {
         fs.createReadStream(filePath)

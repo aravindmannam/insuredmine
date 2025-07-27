@@ -1,5 +1,5 @@
 const schedule = require('node-schedule');
-const ScheduledMessage = require('./models/scheduledMessage');
+const ScheduledMessage = require('../models/scheduledMessage');
 const PublishedMessage = require('./models/publishedMessage');
 
 module.exports = () => {

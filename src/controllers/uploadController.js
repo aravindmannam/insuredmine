@@ -1,7 +1,8 @@
 const path = require('path');
-const fs = require('fs');
+// Import Worker class to spawn worker threads
 const { Worker } = require('worker_threads');
 
+//file upload handler
 exports.uploadFile = (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });

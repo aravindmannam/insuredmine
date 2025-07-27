@@ -3,7 +3,6 @@ const router = express.Router();
 
 const { searchPolicyByUsername,aggregatePoliciesPerUser } = require('../controllers/policyController');
 
-
 // GET /api/policy/search/:name
 router.get('/search/:name', searchPolicyByUsername);
 
